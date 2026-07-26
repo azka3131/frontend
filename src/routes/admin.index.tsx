@@ -16,14 +16,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  SCHOOL_NEWS,
-  ANNOUNCEMENTS,
-  TEACHERS,
-  GALLERY_ALBUMS,
-  ACHIEVEMENTS,
-} from '@/lib/data'
-import { MESSAGES } from '@/lib/admin-data'
 
 export const Route = createFileRoute('/admin/')({
   head: () => ({
@@ -36,7 +28,6 @@ export const Route = createFileRoute('/admin/')({
 })
 
 function DashboardHome() {
-  const galleryCount = GALLERY_ALBUMS.reduce((s, a) => s + a.images.length, 0)
   const [statsData, setStatsData] = useState({
     news_count: 0,
     announcements_count: 0,
@@ -45,7 +36,10 @@ function DashboardHome() {
     achievements_count: 0,
     new_messages_count: 0,
   })
+  
   const [activities, setActivities] = useState<any[]>([])
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+
   useEffect(() => {
     Promise.all([
       apiFetch<{
@@ -58,16 +52,24 @@ function DashboardHome() {
       }>('/admin/dashboard'),
 
       apiFetch<any[]>('/admin/activity-logs?limit=5'),
+      
+      // Mengambil data pesan beneran dari backend
+      apiFetch<any>('/admin/messages')
     ])
-      .then(([dashboard, activityLogs]) => {
+      .then(([dashboard, activityLogs, messagesRes]) => {
         setStatsData(dashboard)
         setActivities(activityLogs)
+        
+        // Ambil data pesan dan pastikan bentuknya array
+        const msgData = messagesRes.data ?? messagesRes;
+        setRecentMessages(Array.isArray(msgData) ? msgData : [])
       })
       .catch((error) => {
         console.error(error)
         toast.error('Gagal memuat data dashboard.')
       })
   }, [])
+
   const stats = [
     {
       label: 'Total Berita',
@@ -106,6 +108,7 @@ function DashboardHome() {
       color: 'text-violet-600 bg-violet-50',
     },
   ]
+
   const quickActions = [
     { label: 'Tulis Berita', to: '/admin/news' },
     { label: 'Buat Pengumuman', to: '/admin/announcements' },
@@ -141,25 +144,27 @@ function DashboardHome() {
           </CardHeader>
           <CardContent className="p-0">
             <ul className="divide-y divide-border">
-              {activities.map((a) => (
-                <li key={a.id} className="flex items-start gap-3 px-6 py-3">
-                  <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm">
-                      <span className="font-semibold">
-                        {a.user?.name ?? 'System'}
-                      </span>{' '}
-                      <span className="text-muted-foreground">{a.action}</span>{' '}
-                      <span className="font-medium">{a.target}</span>
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(a.created_at).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                </li>
-              ))}
+              {activities.length === 0 ? (
+                <li className="p-6 text-center text-sm text-muted-foreground">Tidak ada aktivitas.</li>
+              ) : (
+                activities.map((a) => (
+                  <li key={a.id} className="flex items-start gap-3 px-6 py-3">
+                    <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold">
+                          {a.user?.name ?? 'System'}
+                        </span>{' '}
+                        <span className="text-muted-foreground">{a.action}</span>{' '}
+                        <span className="font-medium">{a.target}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(a.created_at).toLocaleString('id-ID')}
+                      </p>
+                    </div>
+                  </li>
+                ))
+              )}
             </ul>
           </CardContent>
         </Card>
@@ -197,28 +202,33 @@ function DashboardHome() {
         </CardHeader>
         <CardContent className="p-0">
           <ul className="divide-y divide-border">
-            {MESSAGES.slice(0, 4).map((m) => (
-              <li
-                key={m.id}
-                className="flex flex-wrap items-start gap-3 px-6 py-3"
-              >
-                <div className="grid h-9 w-9 place-items-center rounded-full bg-secondary text-sm font-bold">
-                  {m.name.charAt(0)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold">{m.name}</p>
-                    {m.status === 'Baru' && <Badge className="h-5">Baru</Badge>}
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {m.date}
-                    </span>
+            {recentMessages.length === 0 ? (
+              <li className="p-6 text-center text-sm text-muted-foreground">Belum ada pesan masuk.</li>
+            ) : (
+              recentMessages.slice(0, 4).map((m) => (
+                <li
+                  key={m.id}
+                  className="flex flex-wrap items-start gap-3 px-6 py-3"
+                >
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-secondary text-sm font-bold uppercase">
+                    {m.name.charAt(0)}
                   </div>
-                  <p className="line-clamp-1 text-sm text-muted-foreground">
-                    {m.message}
-                  </p>
-                </div>
-              </li>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold">{m.name}</p>
+                      {/* Asumsikan status 0 atau false berarti belum dibaca */}
+                      {(!m.is_read || m.is_read === 0) && <Badge className="h-5">Baru</Badge>}
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {new Date(m.created_at || m.date).toLocaleDateString('id-ID')}
+                      </span>
+                    </div>
+                    <p className="line-clamp-1 text-sm text-muted-foreground">
+                      {m.message}
+                    </p>
+                  </div>
+                </li>
+              ))
+            )}
           </ul>
         </CardContent>
       </Card>

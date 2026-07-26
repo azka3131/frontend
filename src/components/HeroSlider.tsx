@@ -69,14 +69,14 @@ export function HeroSlider({ slides, intervalMs = 3000, children }: Props) {
       ))}
 
       <div className="relative z-10 mx-auto flex h-full max-w-7xl items-end px-4 pb-24 sm:px-6 sm:pb-28 lg:items-center lg:px-8 lg:pb-0">
-        <div key={index} className="max-w-2xl text-primary-foreground">
+        <div key={index} className="max-w-2xl text-white">
           {slides[index].title && (
-            <h1 className="hero-fade-up font-display text-4xl font-bold leading-[1.05] tracking-tight drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl text-balance">
+            <h1 className="hero-fade-up font-display text-4xl font-bold leading-[1.05] tracking-tight text-white drop-shadow-md sm:text-5xl md:text-6xl lg:text-7xl text-balance">
               {slides[index].title}
             </h1>
           )}
           {slides[index].subtitle && (
-            <p className="hero-fade-up-delay mt-5 max-w-xl text-base text-primary-foreground/95 sm:text-lg md:text-xl text-pretty">
+            <p className="hero-fade-up-delay mt-5 max-w-xl text-base text-white/90 drop-shadow sm:text-lg md:text-xl text-pretty">
               {slides[index].subtitle}
             </p>
           )}

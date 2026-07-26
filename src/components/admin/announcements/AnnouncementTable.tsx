@@ -8,30 +8,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { News } from './types'
+import { News } from '../news/types' // Kita pakai tipe data yang sama dengan News
 
 interface Props {
   items: News[]
   onCreate: () => void
-  onEdit: (news: News) => void
-  onDelete: (news: News) => void
-  // Tambahkan prop baru untuk menangani perubahan status
+  onEdit: (item: News) => void
+  onDelete: (item: News) => void
   onStatusChange: (id: number, newStatus: string) => void
-}
-
-function getCategoryColor(category: string) {
-  switch (category) {
-    case 'Prestasi':
-      return 'bg-yellow-100 text-yellow-700'
-    case 'Program':
-      return 'bg-green-100 text-green-700'
-    case 'Kegiatan':
-      return 'bg-blue-100 text-blue-700'
-    case 'Pengumuman':
-      return 'bg-red-100 text-red-700'
-    default:
-      return 'bg-gray-100 text-gray-700'
-  }
 }
 
 function getStatusColor(status: string) {
@@ -49,7 +33,7 @@ function getStatusColor(status: string) {
   }
 }
 
-export default function NewsTable({
+export default function AnnouncementTable({
   items,
   onCreate,
   onEdit,
@@ -61,7 +45,6 @@ export default function NewsTable({
 
   const statuses = ['Semua', 'Dipublikasikan', 'Diarsipkan']
 
-  // Menghitung jumlah item per status
   const counts = {
     Semua: items.length,
     Disematkan: items.filter((i) => i.status === 'Disematkan').length,
@@ -70,7 +53,6 @@ export default function NewsTable({
     Diarsipkan: items.filter((i) => i.status === 'Diarsipkan').length,
   }
 
-  // Filter ganda: berdasarkan Tab Status DAN Kolom Pencarian
   const filteredItems = items.filter((item) => {
     const matchesSearch = item.title
       .toLowerCase()
@@ -81,19 +63,16 @@ export default function NewsTable({
 
   return (
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
-      {/* HEADER */}
       <div className="flex items-center justify-between border-b p-5">
         <div>
-          <h2 className="text-xl font-bold">Berita</h2>
+          <h2 className="text-xl font-bold">Pengumuman</h2>
           <p className="text-sm text-muted-foreground">
-            Kelola seluruh berita sekolah
+            Kelola seluruh pengumuman sekolah
           </p>
         </div>
       </div>
 
-      {/* TABS & SEARCH (Bagian atas tabel) */}
       <div className="p-5 border-b space-y-4">
-        {/* Tab Filter mirip desain */}
         <div className="inline-flex items-center p-1 space-x-1 bg-slate-50 border rounded-xl overflow-x-auto max-w-full">
           {statuses.map((status) => (
             <button
@@ -124,19 +103,17 @@ export default function NewsTable({
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <input
               className="w-full rounded-lg border py-2 pl-10 pr-3 outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Cari berita..."
+              placeholder="Cari pengumuman..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Button onClick={onCreate} className="rounded-full px-6">
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah Berita
+            <Plus className="mr-2 h-4 w-4" /> Tambah Pengumuman
           </Button>
         </div>
       </div>
 
-      {/* TABEL */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-slate-50">
@@ -146,13 +123,7 @@ export default function NewsTable({
               </th>
               <th className="p-4 text-left font-medium text-gray-500">Judul</th>
               <th className="p-4 text-left font-medium text-gray-500">
-                Kategori
-              </th>
-              <th className="p-4 text-left font-medium text-gray-500">
                 Tanggal
-              </th>
-              <th className="p-4 text-left font-medium text-gray-500">
-                Penulis
               </th>
               <th className="p-4 text-left font-medium text-gray-500">
                 Status
@@ -189,15 +160,6 @@ export default function NewsTable({
                   </div>
                   <div className="text-xs text-gray-400">/{item.slug}</div>
                 </td>
-                <td className="p-4">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${getCategoryColor(
-                      item.category,
-                    )}`}
-                  >
-                    {item.category}
-                  </span>
-                </td>
                 <td className="p-4 text-sm text-gray-600">
                   {new Date(item.date).toLocaleDateString('id-ID', {
                     day: 'numeric',
@@ -205,17 +167,13 @@ export default function NewsTable({
                     year: 'numeric',
                   })}
                 </td>
-                <td className="p-4 text-sm text-gray-600">{item.author}</td>
                 <td className="p-4">
-                  {/* DROPDOWN STATUS */}
                   <Select
                     defaultValue={item.status}
                     onValueChange={(value) => onStatusChange(item.id, value)}
                   >
                     <SelectTrigger
-                      className={`w-[145px] h-8 rounded-full border-0 font-semibold text-xs focus:ring-0 focus:ring-offset-0 ${getStatusColor(
-                        item.status,
-                      )}`}
+                      className={`w-[145px] h-8 rounded-full border-0 font-semibold text-xs focus:ring-0 focus:ring-offset-0 ${getStatusColor(item.status)}`}
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -251,11 +209,10 @@ export default function NewsTable({
                 </td>
               </tr>
             ))}
-
             {filteredItems.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  Tidak ada berita yang sesuai.
+                <td colSpan={5} className="p-8 text-center text-gray-500">
+                  Tidak ada pengumuman yang sesuai.
                 </td>
               </tr>
             )}

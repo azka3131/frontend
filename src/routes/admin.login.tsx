@@ -1,12 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import logo from '@/assets/school-logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { SCHOOL } from '@/lib/data'
 import { toast } from 'sonner'
 import { apiFetch } from '@/lib/api'
 
@@ -27,6 +26,24 @@ function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [schoolSettings, setSchoolSettings] = useState<any>(null)
+
+  // Ambil identitas sekolah agar dinamis
+  useEffect(() => {
+    apiFetch('/settings')
+      .then((res: any) => setSchoolSettings(res.data ?? res))
+      .catch(() => {});
+  }, []);
+
+  const rawLogo = schoolSettings?.logo;
+  const logoSrc = rawLogo && rawLogo.trim() !== "" 
+    ? (rawLogo.trim().startsWith('http') ? rawLogo.trim() : `http://127.0.0.1:8000${rawLogo.trim()}`) 
+    : logo;
+
+  const schoolName = schoolSettings?.name && schoolSettings.name.trim() !== "" 
+    ? schoolSettings.name.trim() 
+    : "Memuat...";
+
   async function handleLogin() {
     try {
       setLoading(true)
@@ -43,9 +60,7 @@ function AdminLogin() {
       })
 
       localStorage.setItem('token', response.token)
-
       toast.success('Login berhasil')
-
       navigate({ to: '/admin' })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Login gagal.')
@@ -67,13 +82,13 @@ function AdminLogin() {
         />
         <div className="relative flex items-center gap-3">
           <img
-            src={logo}
+            src={logoSrc}
             alt=""
-            className="h-12 w-12 rounded-lg bg-white/10 p-1.5"
+            className="h-12 w-12 rounded-lg bg-white/10 p-1.5 object-contain"
           />
           <div>
             <div className="text-sm font-semibold opacity-80">Admin Panel</div>
-            <div className="text-lg font-bold">{SCHOOL.name}</div>
+            <div className="text-lg font-bold">{schoolName}</div>
           </div>
         </div>
         <div className="relative space-y-4">
@@ -86,7 +101,7 @@ function AdminLogin() {
           </p>
         </div>
         <div className="relative text-xs text-primary-foreground/70">
-          © {new Date().getFullYear()} {SCHOOL.name}. All rights reserved.
+          © {new Date().getFullYear()} {schoolName}. All rights reserved.
         </div>
       </div>
 
@@ -94,9 +109,9 @@ function AdminLogin() {
       <div className="flex items-center justify-center bg-background px-4 py-12 sm:px-8">
         <div className="w-full max-w-md">
           <div className="flex items-center gap-3 lg:hidden">
-            <img src={logo} alt="" className="h-10 w-10" />
+            <img src={logoSrc} alt="" className="h-10 w-10 object-contain" />
             <div className="text-base font-bold text-primary">
-              {SCHOOL.name}
+              {schoolName}
             </div>
           </div>
 
@@ -122,7 +137,7 @@ function AdminLogin() {
                 id="email"
                 type="email"
                 required
-                placeholder="admin@cendekiaharapan.sch.id"
+                placeholder="admin@sekolah.com"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.currentTarget.value)}

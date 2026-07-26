@@ -1,18 +1,17 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { findNews } from "@/lib/data";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { NewsArticleView } from "@/components/NewsArticleView";
+import { apiFetch } from "@/lib/api";
+import type { News } from "@/components/admin/news/types";
 
 export const Route = createFileRoute("/news/$slug")({
-  head: ({ params }) => {
-    const article = findNews(params.slug);
+  // Catatan: Karena kita sekarang mengambil data dari API, tag <head> 
+  // dibuat statis sementara agar tidak memicu error saat rendering awal.
+  head: () => {
     return {
       meta: [
-        {
-          title: article
-            ? `${article.title} — SD Cendekia Harapan`
-            : "Berita — SD Cendekia Harapan",
-        },
-        { name: "description", content: article?.excerpt ?? "Berita SD Cendekia Harapan." },
+        { title: "Berita — SDN Dukuhbenda 02" },
+        { name: "description", content: "Berita SDN Dukuhbenda 02." },
       ],
     };
   },
@@ -21,9 +20,36 @@ export const Route = createFileRoute("/news/$slug")({
 
 function NewsDetail() {
   const { slug } = Route.useParams();
-  const article = findNews(slug);
-  if (!article || article.type !== "news") throw notFound();
+  const [article, setArticle] = useState<News | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        // Mengambil detail berita berdasarkan slug
+        const data = await apiFetch<News>(`/news/${slug}`);
+        setArticle(data);
+      } catch (err) {
+        console.error("Gagal memuat detail berita:", err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [slug]);
+
+  if (loading) {
+    return <div className="text-center py-32 text-gray-500">Memuat artikel...</div>;
+  }
+
+  if (error || !article) {
+    return <div className="text-center py-32 text-gray-500 font-semibold">Berita tidak ditemukan.</div>;
+  }
+
   return (
-    <NewsArticleView article={article} backTo="/news/school" backLabel="Berita Sekolah" />
+    <NewsArticleView article={article as any} backTo="/news/school" backLabel="Berita Sekolah" />
   );
 }

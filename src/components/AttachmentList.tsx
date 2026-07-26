@@ -1,6 +1,15 @@
 import { Download, FileText, FileSpreadsheet, FileArchive, File as FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Attachment, AttachmentKind } from "@/lib/data";
+
+export type AttachmentKind = 'pdf' | 'doc' | 'docx' | 'xls' | 'xlsx' | 'zip';
+
+export interface Attachment {
+  id: number;
+  name: string;
+  url: string;
+  kind: AttachmentKind;
+  size?: string;
+}
 
 const ICONS: Record<AttachmentKind, typeof FileIcon> = {
   pdf: FileText,
@@ -25,7 +34,7 @@ interface Props {
 }
 
 export function AttachmentList({ attachments }: Props) {
-  if (!attachments.length) return null;
+  if (!attachments || !attachments.length) return null;
   return (
     <section className="mt-10 rounded-2xl border border-border bg-card p-6">
       <h2 className="text-lg font-semibold">Lampiran</h2>

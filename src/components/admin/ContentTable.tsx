@@ -38,14 +38,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { CONTENT_STATUSES, type ContentStatus, type NewsArticle } from "@/lib/data";
 import { DefaultForm } from "@/components/admin/CrudTable";
 
-/**
- * Warna badge & aksen untuk setiap status konten.
- * Menggunakan kelas Tailwind semantic (bukan warna mentah) sehingga tetap
- * konsisten dengan tema terang/gelap.
- */
+export type ContentStatus = 'Disematkan' | 'Dipublikasikan' | 'Disembunyikan' | 'Diarsipkan';
+export const CONTENT_STATUSES: ContentStatus[] = [
+  'Disematkan',
+  'Dipublikasikan',
+  'Disembunyikan',
+  'Diarsipkan',
+];
+
 const STATUS_STYLES: Record<ContentStatus, string> = {
   Disematkan: "bg-primary/15 text-primary border-primary/20",
   Dipublikasikan: "bg-emerald-500/15 text-emerald-700 border-emerald-500/20 dark:text-emerald-300",
@@ -62,6 +64,17 @@ const FILTER_TABS: FilterValue[] = [
   "Diarsipkan",
 ];
 
+export interface NewsArticle {
+  id: number;
+  slug: string;
+  title: string;
+  image: string | null;
+  date: string;
+  author: string;
+  category: string;
+  status: ContentStatus;
+}
+
 export interface ContentRow extends Pick<
   NewsArticle,
   "id" | "slug" | "title" | "image" | "date" | "author" | "category" | "status"
@@ -73,13 +86,19 @@ interface Props {
   items: ContentRow[];
   setItems: React.Dispatch<React.SetStateAction<ContentRow[]>>;
   entityName: "Berita" | "Pengumuman";
-
   extraColumn?: {
     header: string;
     render: (row: ContentRow) => ReactNode;
     className?: string;
   };
 }
+
+// PENDETEKSI GAMBAR SUPER AMAN
+const getImageUrl = (path: string | null | undefined) => {
+  if (!path || path.trim() === "") return "https://placehold.co/150x100/e2e8f0/64748b?text=No+Foto";
+  if (path.trim().startsWith('http')) return path.trim();
+  return `http://127.0.0.1:8000${path.trim()}`;
+};
 
 export function ContentTable({ items, setItems, entityName, extraColumn }: Props) {
   const [filter, setFilter] = useState<FilterValue>("Semua");
@@ -97,7 +116,11 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
       Disembunyikan: 0,
       Diarsipkan: 0,
     };
-    for (const it of items) c[it.status]++;
+    for (const it of items) {
+      if (c[it.status] !== undefined) {
+        c[it.status]++;
+      }
+    }
     return c;
   }, [items]);
 
@@ -130,7 +153,6 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm">
-      {/* Filter tabs */}
       <div className="border-b border-border p-4">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterValue)}>
           <TabsList className="flex flex-wrap justify-start gap-1 bg-muted/60">
@@ -146,7 +168,6 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
         </Tabs>
       </div>
 
-      {/* Search + Add */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
         <div className="relative w-full max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -195,7 +216,15 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
               filtered.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell>
-                    <img src={row.image} alt="" className="h-12 w-16 rounded object-cover" />
+                    <img 
+                      src={getImageUrl(row.image) || "https://placehold.co/150x100/e2e8f0/64748b?text=No+Foto"} 
+                      alt="Thumbnail" 
+                      className="h-12 w-16 rounded object-cover bg-slate-100" 
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "https://placehold.co/150x100/e2e8f0/64748b?text=No+Foto";
+                      }}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{row.title}</div>
@@ -211,7 +240,7 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
                     >
                       <SelectTrigger
                         aria-label="Ubah Status"
-                        className={`h-9 border ${STATUS_STYLES[row.status]}`}
+                        className={`h-9 border ${STATUS_STYLES[row.status] || ""}`}
                       >
                         <SelectValue />
                       </SelectTrigger>
@@ -269,7 +298,6 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
         </Table>
       </div>
 
-      {/* Create / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -277,7 +305,7 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
               {editing ? `Edit ${entityName}` : `Tambah ${entityName}`}
             </DialogTitle>
             <DialogDescription>
-              Lengkapi data berikut. Perubahan disimpan secara lokal pada UI demo ini.
+              Lengkapi data berikut.
             </DialogDescription>
           </DialogHeader>
           <DefaultForm
@@ -291,7 +319,6 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
       <AlertDialog open={deleteId !== null} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -316,7 +343,6 @@ export function ContentTable({ items, setItems, entityName, extraColumn }: Props
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Archive confirmation */}
       <AlertDialog open={archiveId !== null} onOpenChange={(o) => !o && setArchiveId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

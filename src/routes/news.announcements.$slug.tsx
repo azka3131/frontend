@@ -1,16 +1,28 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { findNews } from "@/lib/data";
 import { NewsArticleView } from "@/components/NewsArticleView";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/news/announcements/$slug")({
-  head: ({ params }) => {
-    const article = findNews(params.slug);
+  // Ambil data langsung dari backend berdasarkan slug di URL
+  loader: async ({ params }) => {
+    try {
+      const res = await apiFetch<any>(`/news/${params.slug}`);
+      const data = res.data ?? res;
+      if (!data) throw notFound();
+      return data;
+    } catch (error) {
+      throw notFound();
+    }
+  },
+  // Data dari loader langsung dipakai untuk SEO / Title tab browser
+  head: ({ loaderData }) => {
+    const article = loaderData;
     return {
       meta: [
         {
           title: article
-            ? `${article.title} — SD Cendekia Harapan`
-            : "Pengumuman — SD Cendekia Harapan",
+            ? `${article.title} — SDN Dukuhbenda 02`
+            : "Pengumuman — SDN Dukuhbenda 02",
         },
         { name: "description", content: article?.excerpt ?? "Pengumuman resmi sekolah." },
       ],
@@ -20,10 +32,14 @@ export const Route = createFileRoute("/news/announcements/$slug")({
 });
 
 function AnnouncementDetail() {
-  const { slug } = Route.useParams();
-  const article = findNews(slug);
-  if (!article || article.type !== "announcement") throw notFound();
+  // Panggil data yang sudah ditarik oleh loader tadi
+  const article = Route.useLoaderData();
+  
   return (
-    <NewsArticleView article={article} backTo="/news/announcements" backLabel="Pengumuman" />
+    <NewsArticleView 
+       article={article} 
+       backTo="/news/announcements" 
+       backLabel="Pengumuman" 
+    />
   );
 }

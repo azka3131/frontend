@@ -1,9 +1,36 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
-import logo from "@/assets/school-logo.png";
-import { NAV_ITEMS, SCHOOL, type NavItem } from "@/lib/data";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api";
+import defaultLogo from "@/assets/school-logo.png";
+
+// Definisikan tipe dan data navigasi secara lokal pengganti lib/data.ts
+export interface NavItem {
+  label: string;
+  to: string;
+  children?: { label: string; to: string }[];
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "Beranda", to: "/" },
+  {
+    label: "Profil",
+    to: "/profile",
+    children: [
+      { label: "Visi & Misi", to: "/profile/vision" },
+      { label: "Sejarah", to: "/profile/history" },
+      { label: "Struktur Organisasi", to: "/profile/structure" },
+    ],
+  },
+  { label: "Guru & Staf", to: "/teachers" },
+  { label: "Berita", to: "/news/school" },
+  { label: "Pengumuman", to: "/announcements" },
+  { label: "Galeri", to: "/gallery" },
+  { label: "Prestasi", to: "/achievements" },
+  { label: "Fasilitas", to: "/facilities" },
+  { label: "PPDB", to: "/ppdb" },
+];
 
 function isActivePath(pathname: string, item: NavItem): boolean {
   if (item.to === "/") return pathname === "/";
@@ -17,6 +44,35 @@ export function Navbar() {
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  const [settings, setSettings] = useState({
+    name: "Memuat...",
+    tagline: "Cerdas, Berkarakter, Berprestasi",
+    logo: ""
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await apiFetch<any>('/settings');
+        const data = response.data ?? response;
+        if (data) {
+          setSettings({
+            name: data.name || "SDN Dukuhbenda 02",
+            tagline: data.tagline || "",
+            logo: data.logo || ""
+          });
+        }
+      } catch (error) {
+        console.error("Gagal memuat navbar settings:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const logoSrc = settings.logo 
+    ? (settings.logo.startsWith('http') ? settings.logo : `http://127.0.0.1:8000${settings.logo}`) 
+    : defaultLogo;
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65 shadow-[0_1px_0_0_oklch(0.92_0.015_250/0.6)]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -25,17 +81,17 @@ export function Navbar() {
           className="group flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90"
         >
           <img
-            src={logo}
+            src={logoSrc}
             alt="Logo"
-            className="h-10 w-10 shrink-0 transition-transform duration-300 group-hover:scale-105"
+            className="h-10 w-10 shrink-0 object-contain transition-transform duration-300 group-hover:scale-105"
             width={40}
             height={40}
           />
           <div className="min-w-0 leading-tight">
             <div className="truncate text-sm font-bold tracking-tight text-primary sm:text-base">
-              {SCHOOL.name}
+              {settings.name}
             </div>
-            <div className="hidden text-xs text-muted-foreground sm:block">{SCHOOL.tagline}</div>
+            <div className="hidden text-xs text-muted-foreground sm:block">{settings.tagline}</div>
           </div>
         </Link>
 

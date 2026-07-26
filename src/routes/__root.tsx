@@ -79,12 +79,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SD Cendekia Harapan — Sekolah Dasar Modern" },
+      { title: "SDN Dukuhbenda 02 — Sekolah Dasar Modern" },
       {
         name: "description",
-        content: "Website resmi SD Cendekia Harapan: profil sekolah, berita, prestasi, dan PPDB.",
+        content: "Website resmi SDN Dukuhbenda 02: profil sekolah, berita, prestasi, dan PPDB.",
       },
-      { property: "og:title", content: "SD Cendekia Harapan" },
+      { property: "og:title", content: "SDN Dukuhbenda 02" },
       { property: "og:description", content: "Belajar, Berkembang, Berprestasi." },
       { property: "og:type", content: "website" },
     ],

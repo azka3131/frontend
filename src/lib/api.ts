@@ -5,7 +5,8 @@ export async function apiFetch<T>(
   options: RequestInit = {}
 ): Promise<T> {
 
-  const token = localStorage.getItem("token");
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const headers: Record<string, string> = {
     Accept: "application/json",

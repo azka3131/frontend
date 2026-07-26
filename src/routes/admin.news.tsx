@@ -38,12 +38,31 @@ function NewsAdmin() {
     }
   }
 
+  // Fungsi baru untuk mengirim perubahan status ke Laravel
+  const handleStatusChange = async (id: number, newStatus: string) => {
+    try {
+      // Mengirim request PUT dengan hanya membawa data 'status'
+      await apiFetch(`/admin/news/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      toast.success(`Status berhasil diubah menjadi ${newStatus}`)
+      loadNews() // Memuat ulang data agar tampilan dan jumlah tab ter-update
+    } catch (err) {
+      console.error(err)
+      toast.error('Gagal mengubah status berita')
+    }
+  }
+
   return (
     <AdminLayout title="Berita" breadcrumbs={[{ label: 'Berita' }]}>
       {loading ? (
         <div className="p-8 text-center">Memuat data...</div>
       ) : (
-        // 👇 Tambahkan React Fragment di sini
         <>
           <NewsTable
             items={items}
@@ -69,6 +88,8 @@ function NewsAdmin() {
                 toast.error('Gagal menghapus berita')
               }
             }}
+            // Menghubungkan fungsi ke prop NewsTable yang baru kita buat sebelumnya
+            onStatusChange={handleStatusChange}
           />
           <NewsFormDialog
             open={open}
@@ -77,7 +98,6 @@ function NewsAdmin() {
             onSuccess={loadNews}
           />
         </>
-        // 👆 Tutup Fragment di sini
       )}
     </AdminLayout>
   )

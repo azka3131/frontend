@@ -2,9 +2,21 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AttachmentList } from "@/components/AttachmentList";
-import type { NewsArticle } from "@/lib/data";
+import { AttachmentList, type Attachment } from "@/components/AttachmentList";
 
+interface NewsArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string[];
+  image: string;
+  category: string;
+  date: string;
+  author: string;
+  type?: string;
+  attachments?: Attachment[];
+}
 
 interface Props {
   article: NewsArticle;
@@ -43,7 +55,7 @@ export function NewsArticleView({ article, backTo, backLabel }: Props) {
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <p className="text-lg font-medium text-foreground/90">{article.excerpt}</p>
         <div className="mt-6 space-y-5 text-base leading-relaxed text-muted-foreground">
-          {article.content.map((p, i) => (
+          {article.content?.map((p: string, i: number) => (
             <p key={i}>{p}</p>
           ))}
         </div>
@@ -51,8 +63,6 @@ export function NewsArticleView({ article, backTo, backLabel }: Props) {
         {article.attachments && article.attachments.length > 0 && (
           <AttachmentList attachments={article.attachments} />
         )}
-
-
 
         <div className="mt-10 border-t border-border pt-6">
           <Button asChild variant="ghost">

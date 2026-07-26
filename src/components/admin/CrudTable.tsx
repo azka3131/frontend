@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ interface CrudTableProps<T extends { id: string | number }> {
   searchKeys?: (keyof T)[];
   renderForm?: (item: Partial<T> | null, onClose: () => void) => ReactNode;
   hideActions?: boolean;
+  onDelete?: (item: T) => Promise<void>; // <-- TAMBAHAN BARU: Agar bisa hapus dari database
 }
 
 export function CrudTable<T extends { id: string | number }>({
@@ -53,12 +54,18 @@ export function CrudTable<T extends { id: string | number }>({
   searchKeys = [],
   renderForm,
   hideActions = false,
+  onDelete, // <-- TAMBAHAN BARU
 }: CrudTableProps<T>) {
   const [items, setItems] = useState<T[]>(initial);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<T> | null>(null);
   const [deleteId, setDeleteId] = useState<string | number | null>(null);
+
+  // <-- TAMBAHAN BARU: Memastikan tabel selalu sinkron dengan database
+  useEffect(() => {
+    setItems(initial);
+  }, [initial]);
 
   const filtered = items.filter((row) => {
     if (!search) return true;
@@ -161,12 +168,11 @@ export function CrudTable<T extends { id: string | number }>({
                 {editing ? `Edit ${entityName}` : `Tambah ${entityName}`}
               </DialogTitle>
               <DialogDescription>
-                Lengkapi data berikut. Perubahan disimpan secara lokal pada UI demo ini.
+                Lengkapi data di bawah ini untuk menyimpan perubahan ke server.
               </DialogDescription>
             </DialogHeader>
             {renderForm(editing, () => {
               setDialogOpen(false);
-              toast.success(editing ? `${entityName} diperbarui` : `${entityName} ditambahkan`);
             })}
           </DialogContent>
         </Dialog>
@@ -184,10 +190,24 @@ export function CrudTable<T extends { id: string | number }>({
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
+              onClick={async () => {
                 if (deleteId !== null) {
-                  setItems((s) => s.filter((i) => i.id !== deleteId));
-                  toast.success(`${entityName} dihapus`);
+                  // <-- TAMBAHAN BARU: Logika Delete yang sesungguhnya ke database
+                  if (onDelete) {
+                    const itemToDelete = items.find((i) => i.id === deleteId);
+                    if (itemToDelete) {
+                      try {
+                        await onDelete(itemToDelete);
+                      } catch (error) {
+                        setDeleteId(null);
+                        return; // Berhenti jika gagal hapus di database
+                      }
+                    }
+                  } else {
+                    // Fallback untuk UI statis lama jika onDelete tidak disediakan
+                    setItems((s) => s.filter((i) => i.id !== deleteId));
+                    toast.success(`${entityName} dihapus`);
+                  }
                 }
                 setDeleteId(null);
               }}

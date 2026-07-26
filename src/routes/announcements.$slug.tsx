@@ -2,30 +2,57 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, Calendar, User, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AttachmentList } from "@/components/AttachmentList";
-import { findNews } from "@/lib/data";
+import { AttachmentList, type Attachment } from "@/components/AttachmentList";
+import { apiFetch } from "@/lib/api";
+
+interface NewsArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string[];
+  image: string;
+  category: string;
+  date: string;
+  author: string;
+  type: string;
+  attachments?: Attachment[];
+}
 
 export const Route = createFileRoute("/announcements/$slug")({
-  head: ({ params }) => {
-    const article = findNews(params.slug);
-    return {
-      meta: [
-        {
-          title: article
-            ? `${article.title} — SD Cendekia Harapan`
-            : "Pengumuman — SD Cendekia Harapan",
-        },
-        { name: "description", content: article?.excerpt ?? "Pengumuman resmi sekolah." },
-      ],
-    };
+  loader: async ({ params }) => {
+    let article: NewsArticle;
+
+    try {
+      article = await apiFetch<NewsArticle>(`/news/${params.slug}`);
+    } catch {
+      throw notFound();
+    }
+
+    if (article.type !== "announcement") {
+      throw notFound();
+    }
+
+    return { article };
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData
+          ? `${loaderData.article.title} — SDN Dukuhbenda 02`
+          : "Pengumuman — SDN Dukuhbenda 02",
+      },
+      {
+        name: "description",
+        content: loaderData?.article.excerpt ?? "Pengumuman resmi sekolah.",
+      },
+    ],
+  }),
   component: AnnouncementDetail,
 });
 
 function AnnouncementDetail() {
-  const { slug } = Route.useParams();
-  const article = findNews(slug);
-  if (!article || article.type !== "announcement") throw notFound();
+  const { article } = Route.useLoaderData();
 
   return (
     <article className="bg-background">
@@ -77,13 +104,16 @@ function AnnouncementDetail() {
 
         <p className="mt-8 text-lg font-medium text-foreground/90">{article.excerpt}</p>
         <div className="mt-6 space-y-5 text-base leading-relaxed text-muted-foreground">
-          {article.content.map((p, i) => (
+          {article.content?.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
         </div>
 
         {article.attachments && article.attachments.length > 0 && (
-          <AttachmentList attachments={article.attachments} />
+          <div className="mt-8">
+            <h2 className="mb-3 text-lg font-semibold">Lampiran</h2>
+            <AttachmentList attachments={article.attachments} />
+          </div>
         )}
 
         <div className="mt-10 border-t border-border pt-6">

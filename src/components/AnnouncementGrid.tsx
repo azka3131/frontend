@@ -3,14 +3,34 @@ import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { NewsArticle } from "@/lib/data";
+
+interface Attachment {
+  id: number;
+  name: string;
+  url: string;
+  size?: string;
+}
+
+interface NewsArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string | string[];
+  image: string | null;
+  category: string;
+  date: string;
+  author: string;
+  type: string;
+  attachments?: Attachment[];
+}
 
 interface Props {
   items: NewsArticle[];
 }
 
 export function AnnouncementGrid({ items }: Props) {
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
         Belum ada pengumuman untuk ditampilkan.
@@ -30,7 +50,7 @@ export function AnnouncementGrid({ items }: Props) {
             className="aspect-[16/10] overflow-hidden"
           >
             <img
-              src={n.image}
+              src={n.image || "https://placehold.co/600x400/e2e8f0/64748b?text=No+Image"}
               alt={n.title}
               loading="lazy"
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
