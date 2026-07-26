@@ -38,7 +38,6 @@ function History() {
           <div 
             className="prose prose-sm sm:prose-base max-w-none text-muted-foreground leading-relaxed text-justify break-words"
             dangerouslySetInnerHTML={{ 
-              // PERUBAHAN DI SINI: Kita ganti semua &nbsp; menjadi spasi biasa agar teks mau turun ke bawah
               __html: historyText.replace(/&nbsp;/g, ' ') 
             }}
           />
